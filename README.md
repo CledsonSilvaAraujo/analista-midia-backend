@@ -1,6 +1,5 @@
 # Analista de Mídia — MVP Agente de IA
 
-[![CI](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml)
 
 MVP de um **Agente de IA** que atua como Analista Júnior de Mídia: responde perguntas em linguagem natural sobre tráfego e performance de canais, consultando dados (BigQuery ou mock) e devolvendo insights acionáveis.
 
