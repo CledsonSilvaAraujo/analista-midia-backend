@@ -1,9 +1,11 @@
 # Analista de Mídia — MVP Agente de IA
 
+[![CI](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml) (Não foi feito pq teria que adicionar as chaves nos secrets, deixando para qualquer um usar)
+
+- **Backend (este repositório):** [github.com/CledsonSilvaAraujo/analista-midia-backend](https://github.com/CledsonSilvaAraujo/analista-midia-backend)
+- **Frontend (React + Tailwind):** [github.com/CledsonSilvaAraujo/analista-midia-frontend](https://github.com/CledsonSilvaAraujo/analista-midia-frontend) — repositório separado.
 
 MVP de um **Agente de IA** que atua como Analista Júnior de Mídia: responde perguntas em linguagem natural sobre tráfego e performance de canais, consultando dados (BigQuery ou mock) e devolvendo insights acionáveis.
-
-**Frontend (React + Tailwind):** [analista-midia-frontend](https://github.com/SEU_USUARIO/analista-midia-frontend) — repositório separado.
 
 ---
 
@@ -20,7 +22,7 @@ Siga na ordem. Ao final você terá a API rodando e, opcionalmente, o frontend.
 ### 2. Clonar e entrar no projeto
 
 ```bash
-git clone https://github.com/SEU_USUARIO/analista-midia-backend.git
+git clone https://github.com/CledsonSilvaAraujo/analista-midia-backend.git
 cd analista-midia-backend
 ```
 
@@ -232,7 +234,42 @@ Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependê
 - **JWT opcional**: proteção da rota `/api/ask` quando `JWT_SECRET` está definido; em dev, secret vazio deixa a rota aberta.
 - **Queries parametrizadas**: todas as consultas ao BigQuery usam parâmetros nomeados e `ScalarQueryParameter`, sem concatenação de string, evitando SQL injection e permitindo partition pruning.
 
-Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório (BigQuery ou Mock)**..
+Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório (BigQuery ou Mock)**.
+
+### Diagrama do fluxo do agente
+
+```
+                    ┌─────────────┐
+                    │   Cliente   │
+                    │ (front/curl)│
+                    └──────┬──────┘
+                           │ POST /api/ask { "question": "..." }
+                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  FastAPI (rotas + JWT opcional)                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Orquestrador (LangChain)                                                 │
+│  Loop: pergunta → LLM (com tools vinculadas) → tool_calls? → executa     │
+│  tools → ToolMessage → LLM → ... até resposta final sem tool_calls       │
+└──────────────────────────────────────────────────────────────────────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+  get_traffic_volume   get_channel_performance   list_traffic_sources
+         │                    │                    │
+         └────────────────────┼────────────────────┘
+                              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  IAnalyticsRepository (BigQuery ou Mock)                                 │
+│  Queries parametrizadas → thelook_ecommerce (users, orders, order_items) │
+└──────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    Resposta em linguagem natural
+                    + sources_used (tools utilizadas)
+```
 
 ---
 
@@ -328,6 +365,17 @@ API em http://localhost:8000. Credenciais via `.env` ou variáveis no `docker-co
 - **IA:** LangChain + Tool Calling (OpenAI, gpt-4o-mini)  
 - **Dados:** BigQuery (thelook_ecommerce) ou mock  
 - **Frontend:** repositório separado (React 18, Vite, TypeScript, Tailwind CSS)
+
+---
+
+## Critérios de avaliação (como este projeto atende)
+
+| Critério | Onde está no projeto |
+|----------|----------------------|
+| **Arquitetura do agente** — Tool Calling, prompt separado da execução, uso do framework | [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas): tabela de tools e por quê; [Diagrama do fluxo](#diagrama-do-fluxo-do-agente); seções "Por que LangChain" e "Por que FastAPI". Prompt só em `app/agent/prompts.py`; execução nas tools e no repositório. |
+| **Qualidade do backend** — Tipagem, estrutura de pastas, tratamento de erros (BigQuery e LLM) | Pydantic em `app/domain/schemas.py`, `config/settings.py` e rotas; type hints em interfaces e funções. [Estrutura do projeto](#estrutura-do-projeto-backend): Clean Architecture (domain, api, services, config). Tratamento: `DataSourceError` e `ConfigurationError` com handlers em `app/main.py` (502/503); tools devolvem mensagem de erro ao LLM em vez de estourar. |
+| **Engenharia de dados (SQL)** — Queries eficientes, JOINs e agregações | Queries em `app/services/analytics_repository.py`: parametrizadas (`ScalarQueryParameter`), filtro em `created_at` para partition pruning; CTEs com JOINs `users` → `orders` → `order_items` e agregações (`COUNT(DISTINCT ...)`, `SUM`, `SAFE_DIVIDE`). |
+| **README** — Setup claro, onde colocar chaves OpenAI e credenciais GCP, arquitetura do agente | [Passo a passo](#passo-a-passo-para-o-sistema-funcionar) (1–6); [4.1 Onde colocar a API key da OpenAI](#41-onde-colocar-a-api-key-da-openai-obrigatório); [4.2 Dados (pasta `keys/` e `GOOGLE_APPLICATION_CREDENTIALS`)](#42-dados-bigquery-real-ou-mock); [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas) + [Diagrama do fluxo](#diagrama-do-fluxo-do-agente). |
 
 ---
 
