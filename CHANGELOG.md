@@ -15,7 +15,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 - Arquitetura SOLID: Repository, DI (FastAPI Depends), Factory de tools.
 - Health check com `version` e `openai_configured`.
 - Testes automatizados (pytest) para API, agente e tools.
-- CI com GitHub Actions (Ruff + Pytest).
+- (Ruff + Pytest).
 - Docker e docker-compose para execução em container.
 - Documentação: README com setup, arquitetura e padrões; pyproject.toml; LICENSE (MIT).
 
@@ -24,3 +24,4 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 - Queries BigQuery parametrizadas (evita SQL injection).
 - Credenciais via variáveis de ambiente (.env não commitado).
 - Dockerfile com usuário não-root.
+- Adição de JWT
