@@ -268,17 +268,7 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
 
 ## Resposta útil para o gerente de mídia (não é despejo de dados)
 
-O prompt do agente exige **insights e conclusões acionáveis**, não só repetir números. Exemplo do tipo de resposta esperada:
-
-**Pergunta:** *Qual canal tem a melhor performance?*
-
-**Resposta esperada (útil):**  
-*O canal **Organic** lidera em receita total e em receita por usuário (R$ X por usuário), indicando que o tráfego orgânico converte bem. O **Search** vem em seguida em volume de pedidos. Recomendo priorizar investimento em SEO e comparar o CAC dos canais pagos com a receita por usuário do Organic para avaliar ROI.*
-
-**O que se evita (despejo técnico):**  
-*traffic_source: Organic, total_users: 1234, total_orders: 567, total_revenue: 89000.00, revenue_per_user: 72.12...*
-
-Ou seja: o sistema está desenhado para **resumir os dados, destacar o que importa e dar uma conclusão ou recomendação breve**, em linguagem de negócio.
+O prompt do agente exige **insights e conclusões acionáveis**, não só repetir números. Ou seja: o sistema está desenhado para **resumir os dados, destacar o que importa e dar uma conclusão ou recomendação breve**, em linguagem de negócio.
 
 ---
 
