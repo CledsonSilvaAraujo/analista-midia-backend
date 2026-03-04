@@ -346,7 +346,7 @@ def create_list_traffic_sources_tool(repo: IAnalyticsRepository) -> StructuredTo
 def create_analyst_tools(repo: IAnalyticsRepository) -> list[StructuredTool]:
     """
     Factory: retorna as nove tools do analista com o repositório injetado.
-    Permite testar o agente com um repositório mock (Dependency Inversion).
+    Permite testar o agente com repositório injetado (ex.: mock em testes).
     """
     return [
         create_traffic_volume_tool(repo),

@@ -17,7 +17,6 @@ from app.agent.agent_factory import create_media_analyst_orchestrator
 from app.domain.interfaces import IAnalyticsRepository
 from app.services.analytics_repository import BigQueryAnalyticsRepository
 from app.services.bigquery_client import BigQueryClient
-from app.services.mock_analytics_repository import MockAnalyticsRepository
 
 
 @lru_cache
@@ -35,8 +34,7 @@ def get_bigquery_client(
         raise ConfigurationError(
             f"Arquivo de credenciais não encontrado: {creds_path}. "
             "No Docker, use GOOGLE_APPLICATION_CREDENTIALS=/app/keys/seu-arquivo.json "
-            "e coloque o JSON na pasta keys/ (o docker-compose monta ./keys em /app/keys). "
-            "Para testar sem BigQuery, use USE_MOCK_ANALYTICS=true no .env."
+            "e coloque o JSON na pasta keys/ (o docker-compose monta ./keys em /app/keys)."
         )
     return BigQueryClient(
         project=settings.google_cloud_project,
@@ -47,9 +45,7 @@ def get_bigquery_client(
 def get_analytics_repository(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> IAnalyticsRepository:
-    """Repositório de analytics: mock (USE_MOCK_ANALYTICS=true) ou BigQuery real."""
-    if settings.use_mock_analytics:
-        return MockAnalyticsRepository()
+    """Repositório de analytics (BigQuery)."""
     client = get_bigquery_client(settings)
     return BigQueryAnalyticsRepository(client=client)
 

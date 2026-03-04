@@ -1,11 +1,11 @@
 # Analista de Mídia — MVP Agente de IA
 
-[![CI](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml) (Não foi feito pq teria que adicionar as chaves nos secrets, deixando para qualquer um usar)
+[[CI/CD com github Actions](Não foi feito porque seria necessário adicionar as chaves nos secrets, o que deixaria qualquer pessoa utilizá-las.)]
 
 - **Backend (este repositório):** [github.com/CledsonSilvaAraujo/analista-midia-backend](https://github.com/CledsonSilvaAraujo/analista-midia-backend)
 - **Frontend (React + Tailwind):** [github.com/CledsonSilvaAraujo/analista-midia-frontend](https://github.com/CledsonSilvaAraujo/analista-midia-frontend) — repositório separado.
 
-MVP de um **Agente de IA** que atua como Analista Júnior de Mídia: responde perguntas em linguagem natural sobre tráfego e performance de canais, consultando dados (BigQuery ou mock) e devolvendo insights acionáveis.
+MVP de um **Agente de IA** que atua como Analista Júnior de Mídia: responde perguntas em linguagem natural sobre tráfego e performance de canais, consultando dados no BigQuery (thelook_ecommerce) e devolvendo insights acionáveis.
 
 ---
 
@@ -17,7 +17,7 @@ Siga na ordem. Ao final você terá a API rodando e, opcionalmente, o frontend.
 
 - **Python 3.10+** instalado (ou use **apenas Docker** — veja [Subir só com Docker](#subir-só-com-docker)).
 - Conta **OpenAI** (para o agente usar o modelo).
-- Para dados reais: conta **Google Cloud** (BigQuery). Para só testar: use **dados mock** (não precisa de GCP).
+- Conta **Google Cloud** (BigQuery) para acesso aos dados.
 
 ### 2. Clonar e entrar no projeto
 
@@ -80,22 +80,9 @@ OPENAI_API_KEY=sk-proj-sua-chave-aqui
 
 Não coloque a chave em outro arquivo nem no código; apenas no `.env` da raiz.
 
-#### 4.2 Dados: BigQuery real ou Mock
+#### 4.2 Dados: BigQuery (thelook_ecommerce)
 
-Escolha **uma** das opções abaixo.
-
-**Opção A — Dados mock (mais rápido para testar)**  
-Não precisa de Google Cloud. O sistema usa números de exemplo.
-
-No `.env` adicione:
-
-```env
-USE_MOCK_ANALYTICS=true
-```
-
-Pronto. Pode pular para o passo 5.
-
-**Opção B — BigQuery (dados reais do thelook_ecommerce)**  
+**BigQuery (dados reais do thelook_ecommerce)**  
 Requer projeto no Google Cloud e permissões no BigQuery.
 
 1. No [Google Cloud Console](https://console.cloud.google.com/), crie um projeto (ou use um existente).
@@ -113,8 +100,6 @@ GOOGLE_APPLICATION_CREDENTIALS=/app/keys/minha-service-account.json
 ```
 
 6. No projeto GCP, dê à service account as roles **BigQuery Job User** e **BigQuery Data Viewer** (IAM do projeto).
-7. **Não** defina `USE_MOCK_ANALYTICS` ou use `USE_MOCK_ANALYTICS=false`.
-
 *(Opcional)* Para fixar o projeto nas queries:
 
 ```env
@@ -169,7 +154,7 @@ npm run dev
 | 1 | Python 3.10+, conta OpenAI; opcional: GCP para BigQuery |
 | 2 | Clonar/entrar na pasta do backend |
 | 3 | `python -m venv .venv` → ativar → `pip install -r requirements.txt` |
-| 4 | Copiar `.env.example` para `.env`; preencher `OPENAI_API_KEY`; escolher mock (`USE_MOCK_ANALYTICS=true`) ou BigQuery (credenciais GCP) |
+| 4 | Copiar `.env.example` para `.env`; preencher `OPENAI_API_KEY` e `GOOGLE_APPLICATION_CREDENTIALS` (credenciais GCP) |
 | 5 | `uvicorn main:app --reload --host 0.0.0.0 --port 8000` |
 | 6 | (Opcional) No repo do front: `npm install` e `npm run dev` → http://localhost:5173 |
 
@@ -195,8 +180,7 @@ A resposta traz `access_token`. Use no header: `Authorization: Bearer <access_to
 
 ## De onde vêm os dados?
 
-- **Com `USE_MOCK_ANALYTICS=true`:** números fictícios definidos no código (`app/services/mock_analytics_repository.py`), para demonstração sem BigQuery.
-- **Com BigQuery (sem mock):** dataset público **`bigquery-public-data.thelook_ecommerce`** (tabelas `users`, `orders`, `order_items`). Os números são reais desse dataset.
+- **Com BigQuery:** dataset público **`bigquery-public-data.thelook_ecommerce`** (tabelas `users`, `orders`, `order_items`). Os números são reais desse dataset.
 
 Foi procurada uma forma de **extrair mais valor das tabelas** disponíveis. Além de volume e performance por canal, o analista inclui: **taxa de conversão por canal**; **ticket médio por canal**; **receita por mês por canal** (série temporal); **categorias mais vendidas por canal**; **engajamento (eventos) por canal**; e **performance por centro de distribuição**. Essas métricas usam as tabelas `users`, `orders`, `order_items`, `events`, `inventory_items` e `distribution_centers` do thelook_ecommerce.
 
@@ -229,7 +213,7 @@ O agente usa **Tool Calling**: o modelo (OpenAI) decide **quando** chamar cada f
 | **`get_distribution_center_performance_tool`** | Pedidos e receita por centro de distribuição. | Qual centro distribui mais, receita por armazém ou análise geográfica. |
 | **`list_traffic_sources_tool`** | Lista os canais de tráfego disponíveis no dataset. | O modelo não sabe de antemão quais canais existem (Search, Organic, Facebook, etc.); listar antes evita erros e permite respostas contextualizadas. |
 
-Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependência, então o agente não sabe se os dados vêm do BigQuery ou de mock — isso facilita testes e troca de backend.
+Cada tool recebe o **repositório** BigQuery por injeção de dependência, o que facilita testes (com repositório mockado nos testes) e eventual troca de backend.
 
 ### Por que FastAPI
 
@@ -247,11 +231,11 @@ Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependê
 ### Outras decisões de arquitetura
 
 - **Clean Architecture / camadas**: domínio (`schemas`, `interfaces`, exceções) no centro; API (rotas, dependencies, auth) e serviços (BigQuery, repositórios) como adaptadores. O domínio não depende de FastAPI nem do BigQuery.
-- **Repositório injetado**: a interface `IAnalyticsRepository` permite usar BigQuery real ou mock; em testes e em ambiente sem GCP, `USE_MOCK_ANALYTICS=true` troca a implementação sem mudar o agente.
+- **Repositório injetado**: a interface `IAnalyticsRepository` abstrai o BigQuery; em testes usa-se um repositório mockado sem chamar o GCP.
 - **JWT opcional**: proteção da rota `/api/ask` quando `JWT_SECRET` está definido; em dev, secret vazio deixa a rota aberta.
 - **Queries parametrizadas**: todas as consultas ao BigQuery usam parâmetros nomeados e `ScalarQueryParameter`, sem concatenação de string, evitando SQL injection e permitindo partition pruning.
 
-Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório (BigQuery ou Mock)**.
+Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório BigQuery**.
 
 ### Diagrama do fluxo do agente
 
@@ -279,7 +263,7 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
          └──────────────┴──────────────┴────────────────────┘
                               ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  IAnalyticsRepository (BigQuery ou Mock)                                 │
+│  IAnalyticsRepository (BigQuery)                                        │
 │  Queries parametrizadas → thelook_ecommerce (users, orders, order_items) │
 └──────────────────────────────────────────────────────────────────────────┘
                               │
@@ -297,7 +281,7 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
 │   ├── agent/           # Orquestrador, prompts, factory de tools
 │   ├── api/             # Rotas e dependências (FastAPI)
 │   ├── domain/          # Schemas, exceções, interfaces
-│   ├── services/        # BigQuery client, repositórios (real e mock)
+│   ├── services/        # BigQuery client e repositório de analytics
 │   └── main.py
 ├── config/              # Settings e constantes
 ├── tests/
@@ -376,14 +360,14 @@ ruff check app config tests
 
 Você pode subir a API **apenas com Docker**, sem instalar Python, criar venv ou rodar `pip install`. O Docker faz todos os passos (ambiente, dependências e execução).
 
-1. Na raiz do projeto, crie o `.env` (por exemplo: `cp .env.example .env`) e preencha pelo menos `OPENAI_API_KEY`. Para testar sem BigQuery, use `USE_MOCK_ANALYTICS=true`; para dados reais, configure `GOOGLE_APPLICATION_CREDENTIALS`.
+1. Na raiz do projeto, crie o `.env` (por exemplo: `cp .env.example .env`) e preencha `OPENAI_API_KEY` e `GOOGLE_APPLICATION_CREDENTIALS`.
 2. Suba o container:
 
 ```bash
 docker-compose up --build
 ```
 
-A API fica em http://localhost:8000. Se faltar `OPENAI_API_KEY` ou `GOOGLE_APPLICATION_CREDENTIALS` (quando não estiver usando mock), a aplicação avisa no log ao subir.
+A API fica em http://localhost:8000. Se faltar `OPENAI_API_KEY` ou `GOOGLE_APPLICATION_CREDENTIALS`, a aplicação avisa no log ao subir.
 
 **Docker (resumo):**
 
@@ -399,19 +383,19 @@ API em http://localhost:8000. Credenciais via `.env` ou variáveis no `docker-co
 
 - **Backend:** Python 3.10+, FastAPI  
 - **IA:** LangChain + Tool Calling (OpenAI, gpt-4o-mini)  
-- **Dados:** BigQuery (thelook_ecommerce) ou mock  
+- **Dados:** BigQuery (thelook_ecommerce)  
 - **Frontend:** repositório separado (React 18, Vite, TypeScript, Tailwind CSS)
 
 ---
 
-## Critérios de avaliação (como este projeto atende)
+## Critérios de avaliação (localização e como o projeto atende)
 
 | Critério | Onde está no projeto |
 |----------|----------------------|
 | **Arquitetura do agente** — Tool Calling, prompt separado da execução, uso do framework | [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas): tabela de tools e por quê; [Diagrama do fluxo](#diagrama-do-fluxo-do-agente); seções "Por que LangChain" e "Por que FastAPI". Prompt só em `app/agent/prompts.py`; execução nas tools e no repositório. |
 | **Qualidade do backend** — Tipagem, estrutura de pastas, tratamento de erros (BigQuery e LLM) | Pydantic em `app/domain/schemas.py`, `config/settings.py` e rotas; type hints em interfaces e funções. [Estrutura do projeto](#estrutura-do-projeto-backend): Clean Architecture (domain, api, services, config). Tratamento: `DataSourceError` e `ConfigurationError` com handlers em `app/main.py` (502/503); tools devolvem mensagem de erro ao LLM em vez de estourar. |
 | **Engenharia de dados (SQL)** — Queries eficientes, JOINs e agregações | Queries em `app/services/analytics_repository.py`: parametrizadas (`ScalarQueryParameter`), filtro em `created_at` para partition pruning; CTEs com JOINs `users` → `orders` → `order_items` e agregações (`COUNT(DISTINCT ...)`, `SUM`, `SAFE_DIVIDE`). |
-| **README** — Setup claro, onde colocar chaves OpenAI e credenciais GCP, arquitetura do agente | [Passo a passo](#passo-a-passo-para-o-sistema-funcionar) (1–6); [4.1 Onde colocar a API key da OpenAI](#41-onde-colocar-a-api-key-da-openai-obrigatório); [4.2 Dados (pasta `keys/` e `GOOGLE_APPLICATION_CREDENTIALS`)](#42-dados-bigquery-real-ou-mock); [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas) + [Diagrama do fluxo](#diagrama-do-fluxo-do-agente). |
+| **README** — Setup claro, onde colocar chaves OpenAI e credenciais GCP, arquitetura do agente | [Passo a passo](#passo-a-passo-para-o-sistema-funcionar) (1–6); [4.1 Onde colocar a API key da OpenAI](#41-onde-colocar-a-api-key-da-openai-obrigatório); [4.2 Dados (pasta `keys/` e `GOOGLE_APPLICATION_CREDENTIALS`)](#42-dados-bigquery-thelook_ecommerce); [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas) + [Diagrama do fluxo](#diagrama-do-fluxo-do-agente). |
 
 ---
 

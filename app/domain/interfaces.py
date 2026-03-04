@@ -22,7 +22,7 @@ from app.domain.schemas import (
 class IAnalyticsRepository(Protocol):
     """
     Contrato para acesso a dados de analytics (tráfego e performance).
-    Qualquer implementação (BigQuery, mock, cache) pode ser injetada.
+    Qualquer implementação (BigQuery ou outra) pode ser injetada.
     """
 
     def get_traffic_volume(

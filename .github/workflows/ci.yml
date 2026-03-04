@@ -29,4 +29,4 @@ jobs:
         run: pytest tests/ -v
         env:
           OPENAI_API_KEY: "sk-test-fake-for-ci"
-          # BigQuery não é chamado nos testes (mocks)
+          # BigQuery não é chamado nos testes (repositório injetado)

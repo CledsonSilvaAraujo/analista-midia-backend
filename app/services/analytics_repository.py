@@ -41,7 +41,7 @@ def _date_params(
 class BigQueryAnalyticsRepository:
     """
     Acesso a dados de tráfego e performance no thelook_ecommerce.
-    Implementa IAnalyticsRepository; pode ser substituído por mock/cache (Liskov).
+    Implementa IAnalyticsRepository; pode ser substituído por outra implementação (ex.: em testes).
     """
 
     def __init__(self, client: BigQueryClient) -> None:

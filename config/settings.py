@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     bigquery_dataset: str = "bigquery-public-data.thelook_ecommerce"
     google_cloud_project: str | None = None
-    use_mock_analytics: bool = False  # True = usa dados mock (sem BigQuery)
     jwt_secret: str = ""  # Se preenchido, rotas protegidas exigem Bearer JWT válido
     login_user: str = ""  # Usuário fixo para POST /api/login (só usado se jwt_secret estiver definido)
     login_password: str = ""  # Senha fixa para POST /api/login

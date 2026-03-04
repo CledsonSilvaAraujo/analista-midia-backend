@@ -52,12 +52,9 @@ async def lifespan(app: FastAPI):
             settings.validate_openai()
         except ConfigurationError:
             pass
-    if not settings.use_mock_analytics and not os.environ.get(
-        "GOOGLE_APPLICATION_CREDENTIALS"
-    ):
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
         logger.warning(
-            "GOOGLE_APPLICATION_CREDENTIALS não está definida no .env. "
-            "Para dados reais (BigQuery), defina no .env. Para só testar, use USE_MOCK_ANALYTICS=true."
+            "GOOGLE_APPLICATION_CREDENTIALS não está definida no .env. Defina para acessar o BigQuery."
         )
     if settings.jwt_secret and settings.jwt_secret.strip():
         logger.info(
