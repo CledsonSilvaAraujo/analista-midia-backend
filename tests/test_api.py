@@ -1,5 +1,5 @@
 """Testes da API FastAPI."""
-import pytest
+
 from fastapi.testclient import TestClient
 
 
@@ -68,6 +68,7 @@ def test_ask_returns_502_when_agent_raises_data_source_error(
 
     def failing_agent():
         from unittest.mock import MagicMock
+
         mock = MagicMock()
         mock.invoke.side_effect = DataSourceError("BigQuery timeout")
         return mock

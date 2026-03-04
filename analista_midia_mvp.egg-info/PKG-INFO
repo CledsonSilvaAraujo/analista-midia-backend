@@ -1,3 +1,40 @@
+Metadata-Version: 2.4
+Name: analista-midia-mvp
+Version: 0.1.0
+Summary: MVP de Agente de IA Analista de Mídia — Tool Calling + BigQuery (thelook_ecommerce)
+Author-email: Seu Nome <seu@email.com>
+License: MIT
+Keywords: llm,langchain,bigquery,media-analytics,fastapi
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.109.0
+Requires-Dist: uvicorn[standard]>=0.27.0
+Requires-Dist: langchain>=0.1.0
+Requires-Dist: langchain-openai>=0.0.5
+Requires-Dist: langchain-core>=0.1.0
+Requires-Dist: google-cloud-bigquery>=3.14.0
+Requires-Dist: db-dtypes>=1.2.0
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: pydantic-settings>=2.1.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: PyJWT>=2.8.0
+Requires-Dist: httpx>=0.26.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: httpx>=0.26.0; extra == "dev"
+Dynamic: license-file
+
 # Analista de Mídia — MVP Agente de IA
 
 [![CI](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml)
@@ -217,7 +254,7 @@ Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependê
 
 - **Performance e tipagem**: ASGI assíncrono, validação de request/response com Pydantic e type hints em toda a API.
 - **Dependency Injection nativa**: `Depends()` para montar o agente, repositório, settings e JWT em um único lugar, sem acoplamento nas rotas.
-- **Documentação automática**: OpenAPI (Swagger http://localhost:8000/docs) em `/docs` sem esforço extra.
+- **Documentação automática**: OpenAPI (Swagger) em `/docs` sem esforço extra.
 - **Tratamento de erros**: exception handlers globais para `ConfigurationError`, `DataSourceError` e 401 (JWT), retornando códigos HTTP e mensagens consistentes.
 
 ### Por que LangChain

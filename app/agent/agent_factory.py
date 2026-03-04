@@ -2,13 +2,14 @@
 Factory do agente (Builder/Factory Pattern).
 Monta o orquestrador com LLM e tools a partir de Settings e repositório injetados.
 """
+
+from config import Settings
+from config.constants import AGENT_MAX_TURNS, AGENT_MODEL_NAME, AGENT_TEMPERATURE
 from langchain_openai import ChatOpenAI
 
 from app.agent.agent import MediaAnalystOrchestrator
 from app.agent.tools_factory import create_analyst_tools
 from app.domain.interfaces import IAnalyticsRepository
-from config import Settings
-from config.constants import AGENT_MAX_TURNS, AGENT_MODEL_NAME, AGENT_TEMPERATURE
 
 
 def create_media_analyst_orchestrator(

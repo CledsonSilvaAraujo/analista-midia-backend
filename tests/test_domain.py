@@ -1,14 +1,13 @@
 """Testes unitários do domínio: schemas e exceções."""
-import pytest
-from pydantic import ValidationError
 
+import pytest
 from app.domain.exceptions import AgentError, AppException, DataSourceError
 from app.domain.schemas import (
     AgentResponse,
     ChannelPerformance,
     TrafficVolumeResult,
 )
-
+from pydantic import ValidationError
 
 # --- Schemas ---
 

@@ -1,6 +1,5 @@
 """Fixtures compartilhadas para testes."""
 from collections.abc import Generator
-from datetime import date
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,19 +12,28 @@ from config import Settings
 
 
 @pytest.fixture
-def app_client() -> Generator[TestClient, None, None]:
-    """Cliente HTTP para a API (sem override de dependências)."""
-    with TestClient(app) as client:
-        yield client
+def app_client(mock_settings: Settings) -> Generator[TestClient, None, None]:
+    """Cliente HTTP para a API. get_settings é sobrescrito para desativar JWT nos testes."""
+    from app.api.dependencies import get_settings
+
+    app.dependency_overrides[get_settings] = lambda: mock_settings
+    try:
+        with TestClient(app) as client:
+            yield client
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def mock_settings() -> Settings:
-    """Settings com OpenAI key preenchida (evita 503 em testes que chamam get_media_analyst)."""
+    """Settings para testes: OpenAI fake, JWT desativado (jwt_secret vazio)."""
     return Settings(
         openai_api_key="sk-test-fake-key-for-tests",
         bigquery_dataset="bigquery-public-data.thelook_ecommerce",
         google_cloud_project=None,
+        jwt_secret="",
+        login_user="",
+        login_password="",
     )
 
 

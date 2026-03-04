@@ -3,8 +3,10 @@ Orquestrador do agente (Template Method + Dependency Inversion).
 O agente decide quando chamar cada ferramenta; a lógica de execução fica nas tools.
 Depende de abstrações (LLM com tools, tool executor) injetadas.
 """
+
 from typing import Protocol, runtime_checkable
 
+from config.constants import AGENT_MAX_TURNS
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
     BaseMessage,
@@ -15,7 +17,6 @@ from langchain_core.messages import (
 from langchain_core.tools import BaseTool
 
 from app.agent.prompts import MEDIA_ANALYST_SYSTEM_PROMPT
-from config.constants import AGENT_MAX_TURNS
 
 
 @runtime_checkable

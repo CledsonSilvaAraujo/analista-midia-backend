@@ -2,6 +2,7 @@
 Repositório de analytics (Repository Pattern).
 Implementa IAnalyticsRepository usando BigQuery — Adapter do BQ para o domínio.
 """
+
 from datetime import date
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,7 @@ from app.domain.schemas import ChannelPerformance, TrafficVolumeResult
 from app.services.bigquery_client import BigQueryClient
 
 if TYPE_CHECKING:
-    from app.domain.interfaces import IAnalyticsRepository
+    from app.domain.interfaces import IAnalyticsRepository  # noqa: F401
 
 
 class BigQueryAnalyticsRepository:
@@ -29,7 +30,9 @@ class BigQueryAnalyticsRepository:
         end_date: date,
         traffic_source: str | None = None,
     ) -> list[TrafficVolumeResult]:
-        """Volume de usuários por canal no período. Query parametrizada."""
+        """Volume de usuários por canal no período. Query parametrizada.
+        Usa faixa em created_at (sem DATE()) para permitir partition pruning no BigQuery.
+        """
         ds = self._client.dataset
         query = f"""
             SELECT
@@ -38,7 +41,8 @@ class BigQueryAnalyticsRepository:
                 MIN(DATE(created_at)) AS period_start,
                 MAX(DATE(created_at)) AS period_end
             FROM `{ds}.users`
-            WHERE DATE(created_at) BETWEEN @start_date AND @end_date
+            WHERE created_at >= TIMESTAMP(@start_date)
+              AND created_at < TIMESTAMP(DATE_ADD(@end_date, INTERVAL 1 DAY))
               AND (@traffic_source IS NULL OR traffic_source = @traffic_source)
             GROUP BY traffic_source
             ORDER BY total_users DESC
@@ -64,21 +68,23 @@ class BigQueryAnalyticsRepository:
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> list[ChannelPerformance]:
-        """Performance por canal: JOIN users → orders → order_items."""
+        """Performance por canal: JOIN users → orders → order_items.
+        Filtro em o.created_at sem DATE() para partition pruning.
+        """
         ds = self._client.dataset
         query = f"""
             WITH user_orders AS (
                 SELECT
                     u.traffic_source,
                     u.id AS user_id,
-                    o.id AS order_id,
+                    o.order_id AS order_id,
                     oi.sale_price
                 FROM `{ds}.users` u
                 INNER JOIN `{ds}.orders` o
                     ON o.user_id = u.id AND o.status = 'Complete'
-                INNER JOIN `{ds}.order_items` oi ON oi.order_id = o.id
-                WHERE (@start_date IS NULL OR DATE(o.created_at) >= @start_date)
-                  AND (@end_date IS NULL OR DATE(o.created_at) <= @end_date)
+                INNER JOIN `{ds}.order_items` oi ON oi.order_id = o.order_id
+                WHERE (@start_date IS NULL OR o.created_at >= TIMESTAMP(@start_date))
+                  AND (@end_date IS NULL OR o.created_at < TIMESTAMP(DATE_ADD(@end_date, INTERVAL 1 DAY)))
             ),
             agg AS (
                 SELECT

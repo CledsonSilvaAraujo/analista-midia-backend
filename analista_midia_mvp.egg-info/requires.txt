@@ -1,23 +1,18 @@
-# Backend
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
-
-# IA - Orquestrador
 langchain>=0.1.0
 langchain-openai>=0.0.5
 langchain-core>=0.1.0
-
-# BigQuery
 google-cloud-bigquery>=3.14.0
 db-dtypes>=1.2.0
-
-# Config e ambiente
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
-
-# Auth (JWT)
 PyJWT>=2.8.0
+httpx>=0.26.0
 
-# Utilitários
+[dev]
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+ruff>=0.1.0
 httpx>=0.26.0

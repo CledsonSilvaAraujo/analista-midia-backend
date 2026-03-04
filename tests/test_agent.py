@@ -1,11 +1,11 @@
 """Testes do orquestrador e da factory de tools."""
-from unittest.mock import MagicMock
 
-import pytest
-from langchain_core.messages import AIMessage, BaseMessage
+from unittest.mock import MagicMock
 
 from app.agent.agent import MediaAnalystOrchestrator
 from app.agent.tools_factory import create_analyst_tools, create_traffic_volume_tool
+from app.domain.schemas import TrafficVolumeResult
+from langchain_core.messages import AIMessage, BaseMessage
 
 
 def test_orchestrator_returns_final_answer_when_no_tool_calls() -> None:

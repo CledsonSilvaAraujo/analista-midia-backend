@@ -33,6 +33,7 @@ dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "python-dotenv>=1.0.0",
+    "PyJWT>=2.8.0",
     "httpx>=0.26.0",
 ]
 
@@ -57,7 +58,7 @@ src = ["app", "config", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]
+ignore = ["E501", "N818"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

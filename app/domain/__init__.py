@@ -1,4 +1,5 @@
 """Modelos de domínio, DTOs, exceções e interfaces."""
+
 from app.domain.exceptions import (
     AgentError,
     AppException,

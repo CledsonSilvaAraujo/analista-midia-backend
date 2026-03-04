@@ -1,11 +1,10 @@
 """Testes unitários dos serviços: repositório com cliente mockado."""
+
 from datetime import date
 from unittest.mock import MagicMock
 
 import pytest
-
 from app.domain.exceptions import DataSourceError
-from app.domain.schemas import ChannelPerformance, TrafficVolumeResult
 from app.services.analytics_repository import BigQueryAnalyticsRepository
 from app.services.bigquery_client import BigQueryClient
 

@@ -2,6 +2,7 @@
 Cliente de baixo nível para BigQuery (Single Responsibility: executar queries).
 Não conhece regras de negócio; apenas executa SQL parametrizado e retorna linhas.
 """
+
 import logging
 from typing import Any
 

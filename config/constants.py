@@ -1,4 +1,5 @@
 """Constantes da aplicação (Open/Closed: alterar comportamento por config)."""
+
 from typing import Final
 
 # Agente

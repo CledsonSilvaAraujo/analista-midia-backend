@@ -1,6 +1,7 @@
 """Testes unitários de configuração e constantes."""
-import pytest
 
+import pytest
+from config import Settings
 from config.constants import (
     AGENT_MAX_TURNS,
     AGENT_MODEL_NAME,
@@ -10,7 +11,6 @@ from config.constants import (
     TOOL_NAME_TRAFFIC_VOLUME,
 )
 from config.exceptions import ConfigurationError
-from config import Settings
 
 
 def test_settings_loads_env_defaults() -> None:

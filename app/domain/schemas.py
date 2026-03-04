@@ -1,4 +1,5 @@
 """Schemas Pydantic para request/response e resultados de dados."""
+
 from pydantic import BaseModel, Field
 
 

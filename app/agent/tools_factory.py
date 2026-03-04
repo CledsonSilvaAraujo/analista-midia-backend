@@ -2,6 +2,7 @@
 Factory de tools (Factory Pattern + Dependency Inversion).
 Cria ferramentas do agente com o repositório injetado — sem acoplamento a Settings/BQ.
 """
+
 from datetime import date
 
 from langchain_core.tools import StructuredTool

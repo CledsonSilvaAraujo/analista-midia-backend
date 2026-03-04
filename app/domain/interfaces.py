@@ -2,6 +2,7 @@
 Interfaces (Protocols) do domínio — Dependency Inversion (SOLID).
 Dependemos de abstrações, não de implementações concretas.
 """
+
 from datetime import date
 from typing import Protocol, runtime_checkable
 
