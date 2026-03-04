@@ -5,7 +5,16 @@ from unittest.mock import MagicMock
 
 import pytest
 from app.agent.agent import MediaAnalystOrchestrator
-from app.domain.schemas import ChannelPerformance, TrafficVolumeResult
+from app.domain.schemas import (
+    AverageOrderValueByChannel,
+    ChannelPerformance,
+    ConversionByChannel,
+    DistributionCenterPerformance,
+    EngagementByChannel,
+    RevenueByMonthByChannel,
+    TopCategoryByChannel,
+    TrafficVolumeResult,
+)
 from app.main import app
 from config import Settings
 from fastapi.testclient import TestClient
@@ -103,13 +112,102 @@ def sample_performance_results() -> list[ChannelPerformance]:
 
 
 @pytest.fixture
+def sample_conversion_results() -> list[ConversionByChannel]:
+    """Dados de conversão por canal para testes."""
+    return [
+        ConversionByChannel(
+            traffic_source="Organic",
+            total_users=800,
+            users_with_order=120,
+            conversion_rate_pct=15.0,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_avg_order_value_results() -> list[AverageOrderValueByChannel]:
+    """Dados de ticket médio por canal para testes."""
+    return [
+        AverageOrderValueByChannel(
+            traffic_source="Search",
+            total_orders=100,
+            total_revenue=15000.0,
+            avg_order_value=150.0,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_revenue_by_month_results() -> list[RevenueByMonthByChannel]:
+    """Dados de receita por mês/canal para testes."""
+    return [
+        RevenueByMonthByChannel(
+            traffic_source="Search",
+            year_month="2024-01",
+            total_revenue=5000.0,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_top_categories_results() -> list[TopCategoryByChannel]:
+    """Dados de categorias por canal para testes."""
+    return [
+        TopCategoryByChannel(
+            traffic_source="Search",
+            category="Vestidos",
+            total_revenue=3000.0,
+            total_units=20,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_engagement_results() -> list[EngagementByChannel]:
+    """Dados de engajamento por canal para testes."""
+    return [
+        EngagementByChannel(
+            traffic_source="Instagram",
+            event_count=5000,
+            unique_users=800,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_distribution_center_results() -> list[DistributionCenterPerformance]:
+    """Dados de performance por DC para testes."""
+    return [
+        DistributionCenterPerformance(
+            distribution_center_name="DC SP",
+            total_orders=200,
+            total_revenue=30000.0,
+        ),
+    ]
+
+
+@pytest.fixture
 def mock_analytics_repository(
     sample_traffic_results: list[TrafficVolumeResult],
     sample_performance_results: list[ChannelPerformance],
+    sample_conversion_results: list[ConversionByChannel],
+    sample_avg_order_value_results: list[AverageOrderValueByChannel],
+    sample_revenue_by_month_results: list[RevenueByMonthByChannel],
+    sample_top_categories_results: list[TopCategoryByChannel],
+    sample_engagement_results: list[EngagementByChannel],
+    sample_distribution_center_results: list[DistributionCenterPerformance],
 ) -> MagicMock:
     """Repositório mock que retorna dados fixos."""
     repo = MagicMock()
     repo.get_traffic_volume.return_value = sample_traffic_results
     repo.get_channel_performance.return_value = sample_performance_results
+    repo.get_conversion_by_channel.return_value = sample_conversion_results
+    repo.get_average_order_value_by_channel.return_value = sample_avg_order_value_results
+    repo.get_revenue_by_month_by_channel.return_value = sample_revenue_by_month_results
+    repo.get_top_categories_by_channel.return_value = sample_top_categories_results
+    repo.get_engagement_by_channel.return_value = sample_engagement_results
+    repo.get_distribution_center_performance.return_value = (
+        sample_distribution_center_results
+    )
     repo.list_traffic_sources.return_value = ["Search", "Organic", "Facebook"]
     return repo

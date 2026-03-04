@@ -198,6 +198,8 @@ A resposta traz `access_token`. Use no header: `Authorization: Bearer <access_to
 - **Com `USE_MOCK_ANALYTICS=true`:** números fictícios definidos no código (`app/services/mock_analytics_repository.py`), para demonstração sem BigQuery.
 - **Com BigQuery (sem mock):** dataset público **`bigquery-public-data.thelook_ecommerce`** (tabelas `users`, `orders`, `order_items`). Os números são reais desse dataset.
 
+Foi procurada uma forma de **extrair mais valor das tabelas** disponíveis. Além de volume e performance por canal, o analista inclui: **taxa de conversão por canal**; **ticket médio por canal**; **receita por mês por canal** (série temporal); **categorias mais vendidas por canal**; **engajamento (eventos) por canal**; e **performance por centro de distribuição**. Essas métricas usam as tabelas `users`, `orders`, `order_items`, `events`, `inventory_items` e `distribution_centers` do thelook_ecommerce.
+
 ---
 
 ## Arquitetura do agente e decisões técnicas
@@ -210,6 +212,12 @@ O agente usa **Tool Calling**: o modelo (OpenAI) decide **quando** chamar cada f
 |------------|-----------|----------------|
 | **`get_traffic_volume_tool`** | Consulta volume de usuários por canal em um período (datas + canal opcional). | Perguntas como "quantos usuários vieram do Search no último mês?" exigem agregação por canal e período; essa tool encapsula a query e devolve texto pronto para o LLM. |
 | **`get_channel_performance_tool`** | Consulta métricas por canal: usuários, pedidos, receita total, receita/usuário, pedidos/usuário. | Perguntas sobre "qual canal performa melhor?", "ROI por canal" ou "receita por usuário" precisam de JOINs e agregações (users → orders → order_items); uma tool dedicada mantém a lógica em um só lugar. |
+| **`get_conversion_by_channel_tool`** | Consulta taxa de conversão por canal: % de usuários que fizeram ao menos uma compra. | Perguntas como "qual canal converte melhor?" ou "qual canal traz usuários que mais compram?" — métrica essencial para mídia (tráfego que vira venda). |
+| **`get_average_order_value_by_channel_tool`** | Ticket médio (receita total / número de pedidos) por canal. | Perguntas sobre valor médio do pedido por canal ou "quanto em média cada pedido gera por canal?". |
+| **`get_revenue_by_month_by_channel_tool`** | Receita por mês e por canal (série temporal). | Evolução mensal, tendência de receita por canal ou comparação mês a mês. |
+| **`get_top_categories_by_channel_tool`** | Categorias mais vendidas por canal (receita e unidades). | Quais categorias ou produtos vendem mais por canal/origem de tráfego. |
+| **`get_engagement_by_channel_tool`** | Contagem de eventos e usuários únicos por canal (tabela `events`). | Engajamento, uso do site (ex.: page_view) ou eventos por origem de tráfego. |
+| **`get_distribution_center_performance_tool`** | Pedidos e receita por centro de distribuição. | Qual centro distribui mais, receita por armazém ou análise geográfica. |
 | **`list_traffic_sources_tool`** | Lista os canais de tráfego disponíveis no dataset. | O modelo não sabe de antemão quais canais existem (Search, Organic, Facebook, etc.); listar antes evita erros e permite respostas contextualizadas. |
 
 Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependência, então o agente não sabe se os dados vêm do BigQuery ou de mock — isso facilita testes e troca de backend.
@@ -255,11 +263,11 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
 │  Loop: pergunta → LLM (com tools vinculadas) → tool_calls? → executa     │
 │  tools → ToolMessage → LLM → ... até resposta final sem tool_calls       │
 └──────────────────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-  get_traffic_volume   get_channel_performance   list_traffic_sources
-         │                    │                    │
-         └────────────────────┼────────────────────┘
+         │              │              │                    │
+         ▼              ▼              ▼                    ▼
+  get_traffic_volume  get_channel_performance  get_conversion_by_channel  ... (+ ticket médio, receita/mês, categorias, engajamento, DC)  list_traffic_sources
+         │              │              │                    │
+         └──────────────┴──────────────┴────────────────────┘
                               ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  IAnalyticsRepository (BigQuery ou Mock)                                 │
@@ -297,8 +305,27 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
 - *Como foi o volume de usuários vindos de Search no último mês?*
 - *Quantos usuários vieram do Organic no último mês?*
 - *Qual dos canais tem a melhor performance? E por quê?*
+- *Qual canal converte melhor?* (taxa de conversão: % de usuários que compraram)
 - *Quais canais de tráfego existem?*
 - *Qual canal gera mais receita por usuário?*
+- *Qual canal tem maior ticket médio?*
+- *Como evoluiu a receita do Organic mês a mês?*
+- *Quais categorias vendem mais por canal?*
+- *Qual centro de distribuição performa melhor?*
+
+---
+
+## Análises adicionais (implementadas)
+
+As análises abaixo estão disponíveis como **tools** do agente:
+
+| Análise | Tool | Tabelas |
+|---------|------|---------|
+| Ticket médio por canal | `get_average_order_value_by_channel_tool` | users, orders, order_items |
+| Receita por mês por canal (série temporal) | `get_revenue_by_month_by_channel_tool` | users, orders, order_items |
+| Categorias mais vendidas por canal | `get_top_categories_by_channel_tool` | users, orders, order_items, inventory_items |
+| Eventos/engajamento por canal | `get_engagement_by_channel_tool` | events, users |
+| Performance por centro de distribuição | `get_distribution_center_performance_tool` | order_items, orders, inventory_items, distribution_centers |
 
 ---
 

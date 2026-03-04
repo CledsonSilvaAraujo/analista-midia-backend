@@ -5,6 +5,14 @@ from unittest.mock import MagicMock
 
 import pytest
 from app.domain.exceptions import DataSourceError
+from app.domain.schemas import (
+    AverageOrderValueByChannel,
+    ConversionByChannel,
+    DistributionCenterPerformance,
+    EngagementByChannel,
+    RevenueByMonthByChannel,
+    TopCategoryByChannel,
+)
 from app.services.analytics_repository import BigQueryAnalyticsRepository
 from app.services.bigquery_client import BigQueryClient
 
@@ -108,6 +116,27 @@ def test_repository_get_channel_performance_handles_none_revenue(
     assert results[0].revenue_per_user == 0.0
 
 
+def test_repository_get_conversion_by_channel_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_conversion_by_channel mapeia linhas para list[ConversionByChannel]."""
+    mock_bq_client.run_query.return_value = [
+        {
+            "traffic_source": "Organic",
+            "total_users": 1000,
+            "users_with_order": 150,
+            "conversion_rate_pct": 15.0,
+        },
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_conversion_by_channel()
+    assert len(results) == 1
+    assert results[0].traffic_source == "Organic"
+    assert results[0].total_users == 1000
+    assert results[0].users_with_order == 150
+    assert results[0].conversion_rate_pct == 15.0
+
+
 def test_repository_list_traffic_sources_returns_string_list(
     mock_bq_client: MagicMock,
 ) -> None:
@@ -119,6 +148,94 @@ def test_repository_list_traffic_sources_returns_string_list(
     repo = BigQueryAnalyticsRepository(client=mock_bq_client)
     sources = repo.list_traffic_sources()
     assert sources == ["Search", "Organic"]
+
+
+def test_repository_get_average_order_value_by_channel_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_average_order_value_by_channel mapeia linhas para list[AverageOrderValueByChannel]."""
+    mock_bq_client.run_query.return_value = [
+        {
+            "traffic_source": "Search",
+            "total_orders": 50,
+            "total_revenue": 7500.0,
+            "avg_order_value": 150.0,
+        },
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_average_order_value_by_channel()
+    assert len(results) == 1
+    assert results[0].traffic_source == "Search"
+    assert results[0].avg_order_value == 150.0
+
+
+def test_repository_get_revenue_by_month_by_channel_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_revenue_by_month_by_channel mapeia linhas para list[RevenueByMonthByChannel]."""
+    mock_bq_client.run_query.return_value = [
+        {"traffic_source": "Organic", "year_month": "2024-02", "total_revenue": 4000.0},
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_revenue_by_month_by_channel()
+    assert len(results) == 1
+    assert results[0].year_month == "2024-02"
+    assert results[0].total_revenue == 4000.0
+
+
+def test_repository_get_top_categories_by_channel_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_top_categories_by_channel mapeia linhas para list[TopCategoryByChannel]."""
+    mock_bq_client.run_query.return_value = [
+        {
+            "traffic_source": "Search",
+            "category": "Vestidos",
+            "total_revenue": 2000.0,
+            "total_units": 15,
+        },
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_top_categories_by_channel(limit=5)
+    assert len(results) == 1
+    assert results[0].category == "Vestidos"
+    assert results[0].total_units == 15
+
+
+def test_repository_get_engagement_by_channel_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_engagement_by_channel mapeia linhas para list[EngagementByChannel]."""
+    mock_bq_client.run_query.return_value = [
+        {
+            "traffic_source": "Instagram",
+            "event_count": 10000,
+            "unique_users": 1200,
+        },
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_engagement_by_channel()
+    assert len(results) == 1
+    assert results[0].event_count == 10000
+    assert results[0].unique_users == 1200
+
+
+def test_repository_get_distribution_center_performance_maps_rows(
+    mock_bq_client: MagicMock,
+) -> None:
+    """get_distribution_center_performance mapeia linhas para list[DistributionCenterPerformance]."""
+    mock_bq_client.run_query.return_value = [
+        {
+            "distribution_center_name": "DC Campinas",
+            "total_orders": 150,
+            "total_revenue": 22500.0,
+        },
+    ]
+    repo = BigQueryAnalyticsRepository(client=mock_bq_client)
+    results = repo.get_distribution_center_performance()
+    assert len(results) == 1
+    assert results[0].distribution_center_name == "DC Campinas"
+    assert results[0].total_revenue == 22500.0
 
 
 def test_repository_propagates_data_source_error(mock_bq_client: MagicMock) -> None:

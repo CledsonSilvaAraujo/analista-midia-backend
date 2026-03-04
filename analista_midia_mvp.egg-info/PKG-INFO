@@ -37,11 +37,12 @@ Dynamic: license-file
 
 # Analista de Mídia — MVP Agente de IA
 
-[![CI](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU_USUARIO/analista-midia-backend/actions/workflows/ci.yml)
+[![CI](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/CledsonSilvaAraujo/analista-midia-backend/actions/workflows/ci.yml) (Não foi feito pq teria que adicionar as chaves nos secrets, deixando para qualquer um usar)
+
+- **Backend (este repositório):** [github.com/CledsonSilvaAraujo/analista-midia-backend](https://github.com/CledsonSilvaAraujo/analista-midia-backend)
+- **Frontend (React + Tailwind):** [github.com/CledsonSilvaAraujo/analista-midia-frontend](https://github.com/CledsonSilvaAraujo/analista-midia-frontend) — repositório separado.
 
 MVP de um **Agente de IA** que atua como Analista Júnior de Mídia: responde perguntas em linguagem natural sobre tráfego e performance de canais, consultando dados (BigQuery ou mock) e devolvendo insights acionáveis.
-
-**Frontend (React + Tailwind):** [analista-midia-frontend](https://github.com/SEU_USUARIO/analista-midia-frontend) — repositório separado.
 
 ---
 
@@ -58,7 +59,7 @@ Siga na ordem. Ao final você terá a API rodando e, opcionalmente, o frontend.
 ### 2. Clonar e entrar no projeto
 
 ```bash
-git clone https://github.com/SEU_USUARIO/analista-midia-backend.git
+git clone https://github.com/CledsonSilvaAraujo/analista-midia-backend.git
 cd analista-midia-backend
 ```
 
@@ -234,6 +235,8 @@ A resposta traz `access_token`. Use no header: `Authorization: Bearer <access_to
 - **Com `USE_MOCK_ANALYTICS=true`:** números fictícios definidos no código (`app/services/mock_analytics_repository.py`), para demonstração sem BigQuery.
 - **Com BigQuery (sem mock):** dataset público **`bigquery-public-data.thelook_ecommerce`** (tabelas `users`, `orders`, `order_items`). Os números são reais desse dataset.
 
+Foi procurada uma forma de **extrair mais valor das tabelas** disponíveis. Além de volume e performance por canal, o analista inclui: **taxa de conversão por canal**; **ticket médio por canal**; **receita por mês por canal** (série temporal); **categorias mais vendidas por canal**; **engajamento (eventos) por canal**; e **performance por centro de distribuição**. Essas métricas usam as tabelas `users`, `orders`, `order_items`, `events`, `inventory_items` e `distribution_centers` do thelook_ecommerce.
+
 ---
 
 ## Arquitetura do agente e decisões técnicas
@@ -246,6 +249,12 @@ O agente usa **Tool Calling**: o modelo (OpenAI) decide **quando** chamar cada f
 |------------|-----------|----------------|
 | **`get_traffic_volume_tool`** | Consulta volume de usuários por canal em um período (datas + canal opcional). | Perguntas como "quantos usuários vieram do Search no último mês?" exigem agregação por canal e período; essa tool encapsula a query e devolve texto pronto para o LLM. |
 | **`get_channel_performance_tool`** | Consulta métricas por canal: usuários, pedidos, receita total, receita/usuário, pedidos/usuário. | Perguntas sobre "qual canal performa melhor?", "ROI por canal" ou "receita por usuário" precisam de JOINs e agregações (users → orders → order_items); uma tool dedicada mantém a lógica em um só lugar. |
+| **`get_conversion_by_channel_tool`** | Consulta taxa de conversão por canal: % de usuários que fizeram ao menos uma compra. | Perguntas como "qual canal converte melhor?" ou "qual canal traz usuários que mais compram?" — métrica essencial para mídia (tráfego que vira venda). |
+| **`get_average_order_value_by_channel_tool`** | Ticket médio (receita total / número de pedidos) por canal. | Perguntas sobre valor médio do pedido por canal ou "quanto em média cada pedido gera por canal?". |
+| **`get_revenue_by_month_by_channel_tool`** | Receita por mês e por canal (série temporal). | Evolução mensal, tendência de receita por canal ou comparação mês a mês. |
+| **`get_top_categories_by_channel_tool`** | Categorias mais vendidas por canal (receita e unidades). | Quais categorias ou produtos vendem mais por canal/origem de tráfego. |
+| **`get_engagement_by_channel_tool`** | Contagem de eventos e usuários únicos por canal (tabela `events`). | Engajamento, uso do site (ex.: page_view) ou eventos por origem de tráfego. |
+| **`get_distribution_center_performance_tool`** | Pedidos e receita por centro de distribuição. | Qual centro distribui mais, receita por armazém ou análise geográfica. |
 | **`list_traffic_sources_tool`** | Lista os canais de tráfego disponíveis no dataset. | O modelo não sabe de antemão quais canais existem (Search, Organic, Facebook, etc.); listar antes evita erros e permite respostas contextualizadas. |
 
 Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependência, então o agente não sabe se os dados vêm do BigQuery ou de mock — isso facilita testes e troca de backend.
@@ -254,7 +263,7 @@ Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependê
 
 - **Performance e tipagem**: ASGI assíncrono, validação de request/response com Pydantic e type hints em toda a API.
 - **Dependency Injection nativa**: `Depends()` para montar o agente, repositório, settings e JWT em um único lugar, sem acoplamento nas rotas.
-- **Documentação automática**: OpenAPI (Swagger) em `/docs` sem esforço extra.
+- **Documentação automática**: OpenAPI (Swagger http://localhost:8000/docs) em `/docs` sem esforço extra.
 - **Tratamento de erros**: exception handlers globais para `ConfigurationError`, `DataSourceError` e 401 (JWT), retornando códigos HTTP e mensagens consistentes.
 
 ### Por que LangChain
@@ -270,7 +279,42 @@ Cada tool recebe o **repositório** (BigQuery ou mock) por injeção de dependê
 - **JWT opcional**: proteção da rota `/api/ask` quando `JWT_SECRET` está definido; em dev, secret vazio deixa a rota aberta.
 - **Queries parametrizadas**: todas as consultas ao BigQuery usam parâmetros nomeados e `ScalarQueryParameter`, sem concatenação de string, evitando SQL injection e permitindo partition pruning.
 
-Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório (BigQuery ou Mock)**..
+Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain + LLM)** → **Tools** → **Repositório (BigQuery ou Mock)**.
+
+### Diagrama do fluxo do agente
+
+```
+                    ┌─────────────┐
+                    │   Cliente   │
+                    │ (front/curl)│
+                    └──────┬──────┘
+                           │ POST /api/ask { "question": "..." }
+                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  FastAPI (rotas + JWT opcional)                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Orquestrador (LangChain)                                                 │
+│  Loop: pergunta → LLM (com tools vinculadas) → tool_calls? → executa     │
+│  tools → ToolMessage → LLM → ... até resposta final sem tool_calls       │
+└──────────────────────────────────────────────────────────────────────────┘
+         │              │              │                    │
+         ▼              ▼              ▼                    ▼
+  get_traffic_volume  get_channel_performance  get_conversion_by_channel  ... (+ ticket médio, receita/mês, categorias, engajamento, DC)  list_traffic_sources
+         │              │              │                    │
+         └──────────────┴──────────────┴────────────────────┘
+                              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  IAnalyticsRepository (BigQuery ou Mock)                                 │
+│  Queries parametrizadas → thelook_ecommerce (users, orders, order_items) │
+└──────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    Resposta em linguagem natural
+                    + sources_used (tools utilizadas)
+```
 
 ---
 
@@ -298,24 +342,33 @@ Fluxo geral: **Cliente** → **FastAPI** (rotas + JWT) → **Agente (LangChain +
 - *Como foi o volume de usuários vindos de Search no último mês?*
 - *Quantos usuários vieram do Organic no último mês?*
 - *Qual dos canais tem a melhor performance? E por quê?*
+- *Qual canal converte melhor?* (taxa de conversão: % de usuários que compraram)
 - *Quais canais de tráfego existem?*
 - *Qual canal gera mais receita por usuário?*
+- *Qual canal tem maior ticket médio?*
+- *Como evoluiu a receita do Organic mês a mês?*
+- *Quais categorias vendem mais por canal?*
+- *Qual centro de distribuição performa melhor?*
+
+---
+
+## Análises adicionais (implementadas)
+
+As análises abaixo estão disponíveis como **tools** do agente:
+
+| Análise | Tool | Tabelas |
+|---------|------|---------|
+| Ticket médio por canal | `get_average_order_value_by_channel_tool` | users, orders, order_items |
+| Receita por mês por canal (série temporal) | `get_revenue_by_month_by_channel_tool` | users, orders, order_items |
+| Categorias mais vendidas por canal | `get_top_categories_by_channel_tool` | users, orders, order_items, inventory_items |
+| Eventos/engajamento por canal | `get_engagement_by_channel_tool` | events, users |
+| Performance por centro de distribuição | `get_distribution_center_performance_tool` | order_items, orders, inventory_items, distribution_centers |
 
 ---
 
 ## Resposta útil para o gerente de mídia (não é despejo de dados)
 
-O prompt do agente exige **insights e conclusões acionáveis**, não só repetir números. Exemplo do tipo de resposta esperada:
-
-**Pergunta:** *Qual canal tem a melhor performance?*
-
-**Resposta esperada (útil):**  
-*O canal **Organic** lidera em receita total e em receita por usuário (R$ X por usuário), indicando que o tráfego orgânico converte bem. O **Search** vem em seguida em volume de pedidos. Recomendo priorizar investimento em SEO e comparar o CAC dos canais pagos com a receita por usuário do Organic para avaliar ROI.*
-
-**O que se evita (despejo técnico):**  
-*traffic_source: Organic, total_users: 1234, total_orders: 567, total_revenue: 89000.00, revenue_per_user: 72.12...*
-
-Ou seja: o sistema está desenhado para **resumir os dados, destacar o que importa e dar uma conclusão ou recomendação breve**, em linguagem de negócio.
+O prompt do agente exige **insights e conclusões acionáveis**, não só repetir números. Ou seja: o sistema está desenhado para **resumir os dados, destacar o que importa e dar uma conclusão ou recomendação breve**, em linguagem de negócio.
 
 ---
 
@@ -376,6 +429,17 @@ API em http://localhost:8000. Credenciais via `.env` ou variáveis no `docker-co
 - **IA:** LangChain + Tool Calling (OpenAI, gpt-4o-mini)  
 - **Dados:** BigQuery (thelook_ecommerce) ou mock  
 - **Frontend:** repositório separado (React 18, Vite, TypeScript, Tailwind CSS)
+
+---
+
+## Critérios de avaliação (como este projeto atende)
+
+| Critério | Onde está no projeto |
+|----------|----------------------|
+| **Arquitetura do agente** — Tool Calling, prompt separado da execução, uso do framework | [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas): tabela de tools e por quê; [Diagrama do fluxo](#diagrama-do-fluxo-do-agente); seções "Por que LangChain" e "Por que FastAPI". Prompt só em `app/agent/prompts.py`; execução nas tools e no repositório. |
+| **Qualidade do backend** — Tipagem, estrutura de pastas, tratamento de erros (BigQuery e LLM) | Pydantic em `app/domain/schemas.py`, `config/settings.py` e rotas; type hints em interfaces e funções. [Estrutura do projeto](#estrutura-do-projeto-backend): Clean Architecture (domain, api, services, config). Tratamento: `DataSourceError` e `ConfigurationError` com handlers em `app/main.py` (502/503); tools devolvem mensagem de erro ao LLM em vez de estourar. |
+| **Engenharia de dados (SQL)** — Queries eficientes, JOINs e agregações | Queries em `app/services/analytics_repository.py`: parametrizadas (`ScalarQueryParameter`), filtro em `created_at` para partition pruning; CTEs com JOINs `users` → `orders` → `order_items` e agregações (`COUNT(DISTINCT ...)`, `SUM`, `SAFE_DIVIDE`). |
+| **README** — Setup claro, onde colocar chaves OpenAI e credenciais GCP, arquitetura do agente | [Passo a passo](#passo-a-passo-para-o-sistema-funcionar) (1–6); [4.1 Onde colocar a API key da OpenAI](#41-onde-colocar-a-api-key-da-openai-obrigatório); [4.2 Dados (pasta `keys/` e `GOOGLE_APPLICATION_CREDENTIALS`)](#42-dados-bigquery-real-ou-mock); [Arquitetura do agente e decisões técnicas](#arquitetura-do-agente-e-decisões-técnicas) + [Diagrama do fluxo](#diagrama-do-fluxo-do-agente). |
 
 ---
 

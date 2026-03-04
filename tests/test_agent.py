@@ -102,16 +102,22 @@ def test_traffic_volume_tool_returns_error_on_invalid_date(
     mock_analytics_repository.get_traffic_volume.assert_not_called()
 
 
-def test_create_analyst_tools_returns_three_tools(
+def test_create_analyst_tools_returns_nine_tools(
     mock_analytics_repository: MagicMock,
 ) -> None:
-    """A factory retorna exatamente três tools."""
+    """A factory retorna exatamente nove tools."""
     tools = create_analyst_tools(mock_analytics_repository)
-    assert len(tools) == 3
+    assert len(tools) == 9
     names = {t.name for t in tools}
     assert names == {
         "get_traffic_volume_tool",
         "get_channel_performance_tool",
+        "get_conversion_by_channel_tool",
+        "get_average_order_value_by_channel_tool",
+        "get_revenue_by_month_by_channel_tool",
+        "get_top_categories_by_channel_tool",
+        "get_engagement_by_channel_tool",
+        "get_distribution_center_performance_tool",
         "list_traffic_sources_tool",
     }
 
@@ -144,6 +150,20 @@ def test_channel_performance_tool_formats_repository_result(
     assert "Search" in result
     assert "15000" in result or "receita" in result
     mock_analytics_repository.get_channel_performance.assert_called_once()
+
+
+def test_conversion_by_channel_tool_formats_repository_result(
+    mock_analytics_repository: MagicMock,
+    sample_conversion_results: list,
+) -> None:
+    """Tool de conversão formata resultado do repositório."""
+    from app.agent.tools_factory import create_conversion_by_channel_tool
+
+    tool = create_conversion_by_channel_tool(mock_analytics_repository)
+    result = tool.invoke({"start_date": None, "end_date": None})
+    assert "Organic" in result
+    assert "15" in result or "conversão" in result
+    mock_analytics_repository.get_conversion_by_channel.assert_called_once()
 
 
 def test_list_traffic_sources_tool_returns_formatted_string(

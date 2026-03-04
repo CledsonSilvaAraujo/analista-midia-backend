@@ -7,6 +7,7 @@ from config.constants import (
     AGENT_MODEL_NAME,
     AGENT_TEMPERATURE,
     TOOL_NAME_CHANNEL_PERFORMANCE,
+    TOOL_NAME_CONVERSION,
     TOOL_NAME_LIST_SOURCES,
     TOOL_NAME_TRAFFIC_VOLUME,
 )
@@ -60,4 +61,5 @@ def test_constants_tool_names_match_expected() -> None:
     """Nomes das tools são os usados pelo agente."""
     assert TOOL_NAME_TRAFFIC_VOLUME == "get_traffic_volume_tool"
     assert TOOL_NAME_CHANNEL_PERFORMANCE == "get_channel_performance_tool"
+    assert TOOL_NAME_CONVERSION == "get_conversion_by_channel_tool"
     assert TOOL_NAME_LIST_SOURCES == "list_traffic_sources_tool"
