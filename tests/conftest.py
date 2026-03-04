@@ -1,14 +1,14 @@
 """Fixtures compartilhadas para testes."""
+
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.agent.agent import MediaAnalystOrchestrator
 from app.domain.schemas import ChannelPerformance, TrafficVolumeResult
 from app.main import app
 from config import Settings
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
