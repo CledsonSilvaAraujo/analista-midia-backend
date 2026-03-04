@@ -1,0 +1,14 @@
+# Um comando para subir a API: docker-compose up
+# Requer .env na raiz (OPENAI_API_KEY e opcional GOOGLE_APPLICATION_CREDENTIALS)
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    # Se usar JSON de service account, monte o volume:
+    # volumes:
+    #   - ./keys:/app/keys:ro
+    # E no .env: GOOGLE_APPLICATION_CREDENTIALS=/app/keys/sua-service-account.json
+    restart: unless-stopped
