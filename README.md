@@ -200,6 +200,15 @@ A resposta traz `access_token`. Use no header: `Authorization: Bearer <access_to
 
 Foi procurada uma forma de **extrair mais valor das tabelas** disponíveis. Além de volume e performance por canal, o analista inclui: **taxa de conversão por canal**; **ticket médio por canal**; **receita por mês por canal** (série temporal); **categorias mais vendidas por canal**; **engajamento (eventos) por canal**; e **performance por centro de distribuição**. Essas métricas usam as tabelas `users`, `orders`, `order_items`, `events`, `inventory_items` e `distribution_centers` do thelook_ecommerce.
 
+### Dataset BigQuery (thelook_ecommerce)
+
+O dataset usado **por padrão** é **`bigquery-public-data.thelook_ecommerce`**. Esse valor é lido pelas dependências e passado ao cliente BigQuery; todas as queries em `app/services/analytics_repository.py` usam `self._client.dataset`, que vem dessa configuração.
+
+- **Se você não definiu `BIGQUERY_DATASET` no `.env`:** está usando o padrão acima (thelook_ecommerce).
+- **Se definiu:** o que vale é o valor do `.env`. Para garantir que seja o thelook, use `BIGQUERY_DATASET=bigquery-public-data.thelook_ecommerce` ou apague a linha para usar o padrão.
+
+**Resumo:** com o padrão do código (e sem outro dataset no `.env`), você está usando o dataset público **thelook_ecommerce** (`bigquery-public-data.thelook_ecommerce`).
+
 ---
 
 ## Arquitetura do agente e decisões técnicas
