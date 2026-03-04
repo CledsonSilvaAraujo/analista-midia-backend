@@ -323,3 +323,4 @@ git push -u origin main
 ```
 
 3. No README do frontend, atualize o link do backend. No README do backend, atualize o link do frontend.
+# analista-midia-backend
