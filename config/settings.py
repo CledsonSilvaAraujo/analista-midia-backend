@@ -1,15 +1,21 @@
 """Configuração central da aplicação (Single Responsibility: carregar config)."""
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.exceptions import ConfigurationError
+
+# .env na raiz do projeto (monk/.env), independente do cwd ao subir o servidor
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_ENV_FILE = _PROJECT_ROOT / ".env"
 
 
 class Settings(BaseSettings):
     """Configurações carregadas de variáveis de ambiente."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE) if _ENV_FILE.is_file() else ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
